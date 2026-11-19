@@ -1,7 +1,13 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { getDb } = require("./db");
+const {
+  verifyToken,
+  verifyRenter,
+  verifyOwner,
+  verifyAdmin,
+} = require("./middleware/auth");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -23,24 +29,6 @@ app.use(
 );
 app.use(express.json());
 
-// Database connection
-const client = new MongoClient(process.env.MONGODB_URI, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: false,
-    deprecationErrors: true,
-  },
-});
-
-let db;
-async function getDb() {
-  if (!db) {
-    await client.connect();
-    db = client.db("equipmentRental");
-  }
-  return db;
-}
-
 // Routes
 app.get("/", (req, res) => {
   res.send("Equipment Rental API is running");
@@ -53,6 +41,19 @@ app.get("/health", async (req, res) => {
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });
   }
+});
+
+// Test routes for token and role checks (we will remove these later)
+app.get("/me", verifyToken, (req, res) => {
+  res.json({ user: req.user });
+});
+
+app.get("/test/admin", verifyToken, verifyAdmin, (req, res) => {
+  res.json({ message: "Hello admin", user: req.user });
+});
+
+app.get("/test/owner", verifyToken, verifyOwner, (req, res) => {
+  res.json({ message: "Hello owner", user: req.user });
 });
 
 // Start the server (only when run directly)
