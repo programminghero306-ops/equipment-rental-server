@@ -31,7 +31,7 @@ app.use(express.json());
 
 // Routes
 app.get("/", (req, res) => {
-  res.send("Equipment Rental API is running");
+  res.send("Equipment Rental API v3 is running");
 });
 
 app.get("/health", async (req, res) => {
@@ -55,6 +55,9 @@ app.get("/test/admin", verifyToken, verifyAdmin, (req, res) => {
 app.get("/test/owner", verifyToken, verifyOwner, (req, res) => {
   res.json({ message: "Hello owner", user: req.user });
 });
+
+// Equipment routes
+app.use("/equipment", require("./routes/equipment"));
 
 // Start the server (only when run directly)
 if (require.main === module) {
