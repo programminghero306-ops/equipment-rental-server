@@ -7,9 +7,17 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:3000",
+  "https://equipment-rental-client.vercel.app",
+]
+  .filter(Boolean)
+  .map((url) => url.replace(/\/$/, ""));
+
 app.use(
   cors({
-    origin: [process.env.CLIENT_URL, "http://localhost:3000"],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
