@@ -3,6 +3,7 @@ const { ObjectId } = require("mongodb");
 const { getDb } = require("../db");
 const {
   verifyToken,
+  verifyRole,
   verifyOwner,
   verifyAdmin,
 } = require("../middleware/auth");
@@ -18,12 +19,46 @@ const CATEGORIES = [
   "Event Equipment",
 ];
 const RENTAL_TYPES = ["Daily", "Weekly", "Monthly"];
+const REQUIRED = [
+  "name", "description", "category", "location", "price", "rentalType",
+  "quantity", "condition", "brand", "model", "image", "terms",
+];
 
 const equipmentCollection = async () =>
   (await getDb()).collection("equipment");
 
 // Makes the search text safe to use in a search pattern
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Checks the request body and returns clean values, or an error message
+function cleanEquipment(b) {
+  for (const field of REQUIRED) {
+    if (b[field] === undefined || b[field] === null || String(b[field]).trim() === "") {
+      return { error: `${field} is required` };
+    }
+  }
+  if (!CATEGORIES.includes(b.category)) return { error: "Invalid category" };
+  if (!RENTAL_TYPES.includes(b.rentalType)) return { error: "Invalid rental type" };
+  if (!(Number(b.price) > 0)) return { error: "Price must be greater than 0" };
+  if (!(Number(b.quantity) >= 0)) return { error: "Invalid quantity" };
+
+  return {
+    fields: {
+      name: String(b.name).trim(),
+      description: String(b.description).trim(),
+      category: b.category,
+      location: String(b.location).trim(),
+      price: Number(b.price),
+      rentalType: b.rentalType,
+      quantity: Number(b.quantity),
+      condition: String(b.condition).trim(),
+      brand: String(b.brand).trim(),
+      model: String(b.model).trim(),
+      image: String(b.image).trim(),
+      terms: String(b.terms).trim(),
+    },
+  };
+}
 
 // ---------- PUBLIC: 6 newest approved items (Home page) ----------
 router.get("/featured", async (req, res) => {
@@ -117,39 +152,11 @@ router.get("/mine", verifyToken, verifyOwner, async (req, res) => {
 // ---------- OWNER: add new equipment (status always starts as pending) ----------
 router.post("/", verifyToken, verifyOwner, async (req, res) => {
   try {
-    const b = req.body;
-    const required = [
-      "name", "description", "category", "location", "price",
-      "rentalType", "quantity", "condition", "brand", "model", "image", "terms",
-    ];
-    for (const field of required) {
-      if (b[field] === undefined || b[field] === "") {
-        return res.status(400).json({ message: `${field} is required` });
-      }
-    }
-    if (!CATEGORIES.includes(b.category)) {
-      return res.status(400).json({ message: "Invalid category" });
-    }
-    if (!RENTAL_TYPES.includes(b.rentalType)) {
-      return res.status(400).json({ message: "Invalid rental type" });
-    }
-    if (!(Number(b.price) > 0) || !(Number(b.quantity) >= 0)) {
-      return res.status(400).json({ message: "Invalid price or quantity" });
-    }
+    const { error, fields } = cleanEquipment(req.body);
+    if (error) return res.status(400).json({ message: error });
 
     const doc = {
-      name: String(b.name).trim(),
-      description: String(b.description).trim(),
-      category: b.category,
-      location: String(b.location).trim(),
-      price: Number(b.price),
-      rentalType: b.rentalType,
-      quantity: Number(b.quantity),
-      condition: String(b.condition).trim(),
-      brand: String(b.brand).trim(),
-      model: String(b.model).trim(),
-      image: String(b.image).trim(),
-      terms: String(b.terms).trim(),
+      ...fields,
       status: "pending",
       // Owner info comes from the verified token, never from the request body
       ownerId: req.user.id,
@@ -189,6 +196,62 @@ router.patch("/:id/status", verifyToken, verifyAdmin, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// ---------- OWNER (own items) or ADMIN (any item): update ----------
+router.put(
+  "/:id",
+  verifyToken,
+  verifyRole("owner", "admin"),
+  async (req, res) => {
+    try {
+      if (!ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const { error, fields } = cleanEquipment(req.body);
+      if (error) return res.status(400).json({ message: error });
+
+      const filter = { _id: new ObjectId(req.params.id) };
+      // Owners can only change their own equipment
+      if (req.user.role !== "admin") filter.ownerId = req.user.id;
+
+      const col = await equipmentCollection();
+      const result = await col.updateOne(filter, {
+        $set: { ...fields, updatedAt: new Date() },
+      });
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: "Equipment not found" });
+      }
+      res.json({ message: "Equipment updated" });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+);
+
+// ---------- OWNER (own items) or ADMIN (any item): delete ----------
+router.delete(
+  "/:id",
+  verifyToken,
+  verifyRole("owner", "admin"),
+  async (req, res) => {
+    try {
+      if (!ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+      const filter = { _id: new ObjectId(req.params.id) };
+      if (req.user.role !== "admin") filter.ownerId = req.user.id;
+
+      const col = await equipmentCollection();
+      const result = await col.deleteOne(filter);
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: "Equipment not found" });
+      }
+      res.json({ message: "Equipment deleted" });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+);
 
 // ---------- PRIVATE: one item's details (keep this LAST) ----------
 router.get("/:id", verifyToken, async (req, res) => {
