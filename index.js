@@ -61,6 +61,8 @@ app.get("/test/owner", verifyToken, verifyOwner, (req, res) => {
 app.use("/equipment", require("./routes/equipment"));
 
 app.use("/reviews", require("./routes/review"));
+
+app.use("/users", require("./routes/users"));
 // Start the server (only when run directly)
 if (require.main === module) {
   app.listen(port, () => console.log(`Server running on port ${port}`));
