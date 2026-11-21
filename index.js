@@ -1,4 +1,5 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const cors = require("cors");
 const { getDb } = require("./db");
@@ -59,7 +60,7 @@ app.get("/test/owner", verifyToken, verifyOwner, (req, res) => {
 // Equipment routes
 app.use("/equipment", require("./routes/equipment"));
 
-app.use("/reviews", require("./routes/reviews"));
+app.use("/reviews", require("./routes/review"));
 // Start the server (only when run directly)
 if (require.main === module) {
   app.listen(port, () => console.log(`Server running on port ${port}`));

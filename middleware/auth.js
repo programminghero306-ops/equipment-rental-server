@@ -49,4 +49,10 @@ const verifyRenter = verifyRole("customer"); // "renter" in the assignment = cus
 const verifyOwner = verifyRole("owner");
 const verifyAdmin = verifyRole("admin");
 
-module.exports = { verifyToken, verifyRenter, verifyOwner, verifyAdmin };
+module.exports = {
+  verifyToken,
+  verifyRole,
+  verifyRenter,
+  verifyOwner,
+  verifyAdmin,
+};
