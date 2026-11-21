@@ -252,7 +252,16 @@ router.delete(
     }
   }
 );
-
+// ---------- ADMIN: every item, whatever its status ----------
+router.get("/admin/all", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const col = await equipmentCollection();
+    const items = await col.find({}).sort({ createdAt: -1 }).toArray();
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 // ---------- PRIVATE: one item's details (keep this LAST) ----------
 router.get("/:id", verifyToken, async (req, res) => {
   try {
