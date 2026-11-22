@@ -1,70 +1,40 @@
-# Equipment Rental API (Server)
+# GearHive - Equipment Rental API
 
-Backend REST API for the Equipment Rental Platform, built with **Node.js**, **Express.js 5**, **MongoDB Native Driver**, and **JOSE JWT** authentication.
+## Purpose
+REST API for the GearHive equipment rental platform. It handles equipment listings, bookings, Stripe payments, favorites, reviews, user management and dashboard analytics, and it protects every private route with JWT verification and role-based middleware.
 
----
+## Live links
+- Server API: https://equipment-rental-server-murex.vercel.app
+- Live site: https://equipment-rental-client.vercel.app
+- Client repository: https://github.com/YOUR-GITHUB-USERNAME/equipment-rental-client
 
-## 🚀 Live Server & Health Check
+## Key features
+- JWT verification with the middlewares verifyToken, verifyRenter, verifyOwner and verifyAdmin
+- Equipment routes with server-side search, filters, sorting and pagination
+- Date-based availability check and server-side price calculation for bookings
+- Stripe Checkout sessions, payment confirmation checked directly with Stripe, and a payments collection
+- Owner and admin management routes for equipment, users and rentals
+- Admin and owner analytics using MongoDB aggregation
+- Confirmed bookings become completed automatically after the rental end date
 
-- **Base URL:** [https://equipment-rental-server.vercel.app](https://equipment-rental-server.vercel.app) *(Replace with your deployed URL)*
-- **Health Check Endpoint:** `GET /health` -> `{ "ok": true, "message": "Database connected" }`
+## npm packages (server)
+- express
+- cors
+- dotenv
+- mongodb
+- jose
+- stripe
 
----
+## Environment variables
+Create a file named .env with these names (see .env.example):
+- PORT
+- MONGODB_URI
+- CLIENT_URL
+- AUTH_URL
+- STRIPE_SECRET_KEY
 
-## 🛠️ Tech Stack
+## Run locally
+    npm install
+    node index.js
 
-- **Runtime:** Node.js v20+
-- **Framework:** Express.js 5.3
-- **Database:** MongoDB 7.9 (Native Driver)
-- **Security & CORS:** CORS, JOSE (JSON Web Key Set verification)
-- **Deployment:** Vercel Serverless (`@vercel/node`)
-
----
-
-## 📡 API Endpoints
-
-### 1. Equipment (`/equipment`)
-- `GET /equipment/featured` - 6 newest approved items for Home page
-- `GET /equipment` - All approved items with search, filter, sort, and pagination
-- `GET /equipment/:id` - Detailed view of a single equipment
-- `POST /equipment` - Add new equipment *(Requires Owner or Admin)*
-- `PATCH /equipment/:id` - Update equipment *(Owner or Admin)*
-- `DELETE /equipment/:id` - Delete equipment *(Owner or Admin)*
-
-### 2. Reviews (`/reviews`)
-- `GET /reviews` - Latest reviews for Home page (or `?equipmentId=...` for item reviews)
-- `POST /reviews` - Add a review *(Authenticated Renter)*
-
-### 3. Auth & System
-- `GET /health` - MongoDB connection health check
-- `GET /me` - Authenticated user details *(Requires Token)*
-
----
-
-## 🔑 Environment Variables Setup
-
-Create a `.env` file in the root directory:
-
-```env
-PORT=5000
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/equipmentRental
-CLIENT_URL=https://equipment-rental-client.vercel.app
-AUTH_URL=https://equipment-rental-client.vercel.app
-```
-
-> **Note on Vercel:** In production, `CLIENT_URL` and `AUTH_URL` must point to your deployed client domain (e.g. `https://your-client.vercel.app`) so that CORS and JWKS verification work seamlessly.
-
----
-
-## 💻 Local Development
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server with auto-reload
-npm run dev
-
-# Or start standard server
-npm start
-```
+The API runs at http://localhost:5000
