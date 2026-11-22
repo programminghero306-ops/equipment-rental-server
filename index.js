@@ -30,11 +30,9 @@ app.use(
 );
 app.use(express.json());
 
-// Routes
 app.get("/", (req, res) => {
-  res.send("Equipment Rental API v3 is running");
+  res.send("Equipment Rental API v4 is running");
 });
-
 app.get("/health", async (req, res) => {
   try {
     await getDb();
@@ -63,6 +61,8 @@ app.use("/equipment", require("./routes/equipment"));
 app.use("/reviews", require("./routes/review"));
 
 app.use("/users", require("./routes/users"));
+
+app.use("/bookings", require("./routes/bookings"));
 // Start the server (only when run directly)
 if (require.main === module) {
   app.listen(port, () => console.log(`Server running on port ${port}`));
