@@ -11,6 +11,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
   "http://localhost:3000",
   "https://equipment-rental-client.vercel.app",
+  "https://equipment-rental-client-lovat.vercel.app",
 ]
   .filter(Boolean)
   .map((url) => url.replace(/\/$/, ""));
