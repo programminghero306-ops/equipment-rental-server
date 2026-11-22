@@ -63,6 +63,8 @@ app.use("/reviews", require("./routes/review"));
 app.use("/users", require("./routes/users"));
 
 app.use("/bookings", require("./routes/bookings"));
+
+app.use("/favorites", require("./routes/favorites"));
 // Start the server (only when run directly)
 if (require.main === module) {
   app.listen(port, () => console.log(`Server running on port ${port}`));
