@@ -5,8 +5,8 @@ REST API for the GearHive equipment rental platform. It handles equipment listin
 
 ## Live links
 - Server API: https://equipment-rental-server-murex.vercel.app
-- Live site: https://equipment-rental-client.vercel.app
-- Client repository: https://github.com/YOUR-GITHUB-USERNAME/equipment-rental-client
+- Live site: https://equipment-rental-client-lovat.vercel.app
+- Client repository: https://github.com/programminghero306-ops/equipment-rental-client
 
 ## Key features
 - JWT verification with the middlewares verifyToken, verifyRenter, verifyOwner and verifyAdmin
@@ -32,6 +32,10 @@ Create a file named .env with these names (see .env.example):
 - CLIENT_URL
 - AUTH_URL
 - STRIPE_SECRET_KEY
+
+For local development, set `AUTH_URL` and `CLIENT_URL` to
+`http://localhost:3000`. On Vercel, the API validates Better Auth JWTs against
+the production client URL `https://equipment-rental-client-lovat.vercel.app`.
 
 ## Run locally
     npm install
