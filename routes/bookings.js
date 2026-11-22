@@ -2,8 +2,12 @@ const express = require("express");
 const Stripe = require("stripe");
 const { ObjectId } = require("mongodb");
 const { getDb } = require("../db");
-const { verifyToken, verifyRenter } = require("../middleware/auth");
-
+const {
+  verifyToken,
+  verifyRenter,
+  verifyOwner,
+  verifyAdmin,
+} = require("../middleware/auth");
 const router = express.Router();
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -368,6 +372,73 @@ router.patch("/:id/cancel", verifyToken, verifyRenter, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+// ---------- OWNER: paid bookings for my equipment ----------
+router.get("/owner", verifyToken, verifyOwner, async (req, res) => {
+  try {
+    const db = await getDb();
+    await completeExpired(db, { ownerId: req.user.id });
+    const items = await db
+      .collection("bookings")
+      .find({ ownerId: req.user.id, paymentStatus: "paid" })
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
+// ---------- ADMIN: every booking on the platform ----------
+router.get("/all", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const db = await getDb();
+    await completeExpired(db);
+    const items = await db
+      .collection("bookings")
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ---------- ADMIN: manage a booking ----------
+// Paid + confirmed  ->  completed
+// Unpaid + pending  ->  cancelled
+router.patch("/:id/status", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+
+    let allowedFrom;
+    if (status === "completed") {
+      allowedFrom = { paymentStatus: "paid", bookingStatus: "confirmed" };
+    } else if (status === "cancelled") {
+      allowedFrom = { paymentStatus: "unpaid", bookingStatus: "pending" };
+    } else {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const db = await getDb();
+    const result = await db
+      .collection("bookings")
+      .updateOne(
+        { _id: new ObjectId(req.params.id), ...allowedFrom },
+        { $set: { bookingStatus: status } }
+      );
+    if (result.matchedCount === 0) {
+      return res
+        .status(400)
+        .json({ message: "This booking cannot be changed to that status" });
+    }
+    res.json({ message: `Booking marked as ${status}` });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 module.exports = router;
 module.exports.completeExpired = completeExpired;
