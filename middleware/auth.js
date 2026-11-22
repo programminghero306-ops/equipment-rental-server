@@ -1,7 +1,11 @@
 const { createRemoteJWKSet, jwtVerify } = require("jose");
 const { getDb } = require("../db");
 
-const AUTH_URL = (process.env.AUTH_URL || "").replace(/\/$/, "");
+const AUTH_URL = (
+  process.env.VERCEL
+    ? "https://equipment-rental-client-lovat.vercel.app"
+    : process.env.AUTH_URL || "http://localhost:3000"
+).replace(/\/$/, "");
 const JWKS = createRemoteJWKSet(new URL(`${AUTH_URL}/api/auth/jwks`));
 
 // 1. Checks the token is real and finds the user in the database
